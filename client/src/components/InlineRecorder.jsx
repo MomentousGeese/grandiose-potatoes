@@ -1,8 +1,8 @@
 import React from 'react';
-
 import rebound from 'rebound';
-
 import getWebcamVideo from '../util/mediaSource';
+
+import { getPreSignedUrl, getSupportedTypes, putObjectToS3, postVideoUrl } from '../util/recordUtil.js';
 
 const CANVAS_COUNT = 9;
 const VIDEO_WIDTH_BIG = 480;
@@ -26,13 +26,16 @@ class InlineRecorder extends React.Component {
       showRecordButton: false,
       recorder: null,
       buffer: [],
+      blob: null,
       recVidUrl: null,
+      uploading: false,
     };
 
     this.redrawFilters = this.redrawFilters.bind(this);
     this.changeSelectedEffect = this.changeSelectedEffect.bind(this);
     this.toggleRecording = this.toggleRecording.bind(this);
     this.discardVideo = this.discardVideo.bind(this);
+    this.uploadRecording = this.uploadRecording.bind(this);
   }
 
   componentDidMount() {
@@ -173,8 +176,34 @@ class InlineRecorder extends React.Component {
     this.state.recorder.stop();
     const blob = new Blob(this.state.buffer, { type: 'video/webm' });
     this.setState({
+      blob,
       recVidUrl: window.URL.createObjectURL(blob),
     });
+  }
+
+  uploadRecording() {
+    // Set the uploading to true to show the loader bar
+    this.setState({
+      uploading: true,
+    });
+
+    getPreSignedUrl()
+      .then((data) => {
+        // data: { preSignedUrl, publicUrl }
+        data.blob = this.state.blob;
+        return putObjectToS3(data);
+      })
+      .then((videoData) => postVideoUrl(videoData.publicUrl))
+      .then((code) => {
+        // Set the share link and remove the spinner from the page
+        this.setState({
+          uploading: false,
+        });
+        console.log(`Upload complete: ${window.location.origin}/videos/${code}`);
+      })
+      .catch((err) => {
+        throw err;
+      });
   }
 
   discardVideo() {
@@ -192,7 +221,7 @@ class InlineRecorder extends React.Component {
           <div id="preview-box">
             <i className="material-icons right" onClick={this.discardVideo}>close</i>
             <video id="preview-player" src={this.state.recVidUrl} controls autoPlay></video>
-            <button onClick={this.sendRecording}>
+            <button onClick={this.uploadRecording}>
               <i className="material-icons right">send</i>
             </button>
           </div>

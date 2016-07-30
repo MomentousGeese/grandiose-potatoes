@@ -129,8 +129,8 @@ class Profile extends React.Component {
           <div className="col s3">
             <ul className="collection">
               {
-                this.state.allUsers.map(user => (
-                  <User handleClick={this.handleUserClick} otherUserName={user} />
+                this.state.allUsers.map((user, i) => (
+                  <User handleClick={this.handleUserClick} otherUserName={user} key={i} />
                 ))
               }
             </ul>
