@@ -22,10 +22,13 @@ class InlineRecorder extends React.Component {
       textures: [],
       springSystem: new rebound.SpringSystem(),
       selectedEffect: null,
+      recording: false,
+      showRecordButton: false,
     };
 
     this.redrawFilters = this.redrawFilters.bind(this);
     this.changeSelectedEffect = this.changeSelectedEffect.bind(this);
+    this.toggleRecording = this.toggleRecording.bind(this);
   }
 
   componentDidMount() {
@@ -62,18 +65,20 @@ class InlineRecorder extends React.Component {
 
   changeSelectedEffect(e) {
     const springs = this.state.springSystem.getAllSprings();
-    // If the clicked effect was already selected, deselect it by setting selectedEffect to null
     if (this.state.selectedEffect === e.target.dataset.index) {
+      // Toggle off selectedEffect (set to null)
       this.state.canvases[e.target.dataset.index].style['z-index'] = 0;
       springs[e.target.dataset.index].setEndValue(0);
       this.setState({
         selectedEffect: null,
+        showRecordButton: false,
       });
     } else {
       this.state.canvases[e.target.dataset.index].style['z-index'] = 1;
       springs[e.target.dataset.index].setEndValue(1);
       this.setState({
         selectedEffect: e.target.dataset.index,
+        showRecordButton: true,
       });
     }
   }
@@ -129,9 +134,18 @@ class InlineRecorder extends React.Component {
     requestAnimationFrame(this.redrawFilters);
   }
 
+  toggleRecording() {
+    this.setState({
+      recording: !this.state.recording,
+    });
+  }
+
   render() {
     return (
       <li className="recorder blue lighten-2">
+        <button id="record-button" onClick={this.toggleRecording} className={this.state.showRecordButton ? '' : 'hidden'}>
+          <div id="record-button-inside" className={this.state.recording ? 'recording' : ''}></div>
+        </button>
         <div id="grid-row-0"></div>
         <div id="grid-row-1"></div>
         <div id="grid-row-2"></div>
