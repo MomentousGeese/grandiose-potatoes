@@ -58,17 +58,14 @@ class Profile extends React.Component {
     this.emitAndAppendNewMessage = this.emitAndAppendNewMessage.bind(this);
 
     socket.on('add message', (message) => {
-      // console.log('Parsed: ', JSON.parse(message));
-
-      // const infoForAppend = {
-      //   url: "http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4",
-      //   type: "vid",
-      //   username: message.senderName,
-      // };
-      this.setState({
-        allMessages: this.state.allMessages.concat(JSON.parse(message)),
-        currentMessages: this.state.currentMessages.concat(JSON.parse(message)),
-      });
+      message = JSON.parse(message);
+      if (message.otherUser === this.state.currentUser) {
+        delete message.otherUser;
+        this.setState({
+          allMessages: this.state.allMessages.concat(message),
+          currentMessages: this.state.currentMessages.concat(message),
+        });
+      }
     });
   }
 
@@ -136,6 +133,7 @@ class Profile extends React.Component {
       url,
       type,
       username: this.state.currentUser,
+      otherUser: this.state.currentOtherUser,
     };
 
     this.setState({
@@ -183,17 +181,21 @@ class Profile extends React.Component {
             emitAndAppendNewMessage={this.emitAndAppendNewMessage}
           />
         </div>
-        <div className="fixed-action-btn">
-          <a className="btn-floating btn-large blue">
-            <i className="large material-icons">send</i>
-          </a>
-          <ul>
-            <li><a className="btn-floating blue"><i className="material-icons">gif</i></a></li>
-            <li onClick={this.handleVideoClick}>
-              <a className="btn-floating blue"><i className="material-icons">videocam</i></a>
-            </li>
-          </ul>
-        </div>
+        {
+          this.state.currentOtherUser !== null ?
+            <div className="fixed-action-btn">
+              <a className="btn-floating btn-large blue">
+                <i className="large material-icons">send</i>
+              </a>
+              <ul>
+                <li><a className="btn-floating blue"><i className="material-icons">gif</i></a></li>
+                <li onClick={this.handleVideoClick}>
+                  <a className="btn-floating blue"><i className="material-icons">videocam</i></a>
+                </li>
+              </ul>
+            </div>
+          : null
+        }
       </div>
     );
   }
