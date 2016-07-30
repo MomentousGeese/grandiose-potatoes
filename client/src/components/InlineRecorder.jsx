@@ -134,7 +134,7 @@ class InlineRecorder extends React.Component {
 
   render() {
     return (
-      <li className="recorder">
+      <li className="recorder blue lighten-2">
         <div id="grid-row-0"></div>
         <div id="grid-row-1"></div>
         <div id="grid-row-2"></div>
