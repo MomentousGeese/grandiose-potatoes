@@ -55,9 +55,20 @@ class Profile extends React.Component {
     this.handleCancelVideoClick = this.handleCancelVideoClick.bind(this);
     this.handleUserClick = this.handleUserClick.bind(this);
     this.handleVideoClick = this.handleVideoClick.bind(this);
+    this.handleTestPostClick = this.handleTestPostClick.bind(this);
 
     socket.on('add message', (message) => {
-      console.log('yedo new message');
+      // console.log('Parsed: ', JSON.parse(message));
+
+      // const infoForAppend = {
+      //   url: "http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4",
+      //   type: "vid",
+      //   username: message.senderName,
+      // };
+      this.setState({
+        allMessages: this.state.allMessages.concat(JSON.parse(message)),
+        currentMessages: this.state.currentMessages.concat(JSON.parse(message)),
+      });
     });
   }
 
@@ -120,9 +131,39 @@ class Profile extends React.Component {
     });
   }
 
-  handleTestPostClick() {
-    var message = 'ayyy';
-    socket.emit('add message', message)
+  handleTestPostClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (this.state.currentOtherUser) {
+      // const infoForPost = {
+      //   url: "http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4",
+      //   type: "vid",
+      //   senderName: this.state.currentUser,
+      //   receiverName: this.state.currentOtherUser,
+      // };
+      // createMessage(info)
+      //   .then((message) => {
+      //     socket.emit('add message', JSON.stringify(infoForPost));
+      //   });
+      const infoForAppend = {
+        url: "http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4",
+        type: "vid",
+        username: this.state.currentUser,
+      };
+
+      this.setState({
+        allMessages: this.state.allMessages.concat(infoForAppend),
+        currentMessages: this.state.currentMessages.concat(infoForAppend),
+      });
+
+      socket.emit('add message', JSON.stringify(infoForAppend));
+    } else {
+      console.log('You must select another user to send message to');
+    }
+    console.log('hit post');
+    // const message = 'ayyy';
+    // socket.emit('add message', message);
   }
 
   startRec() {
@@ -136,6 +177,7 @@ class Profile extends React.Component {
   // <li><a onClick={this.handleClick} className="collection-item light-blue-text">Ryan</a></li>
   // <li><a onClick={this.handleClick} className="collection-item light-blue-text">Robb</a></li>
   // <li><a onClick={this.handleClick} className="collection-item light-blue-text">John Cena</a></li>
+  // onClick={this.handleCancelVideoClick}
   render() {
     return (
       <div>
@@ -168,6 +210,7 @@ class Profile extends React.Component {
             <li onClick={this.handleVideoClick}>
               <a className="btn-floating blue"><i className="material-icons">videocam</i></a>
             </li>
+            <li onClick={this.handleTestPostClick} ><a className="btn-floating blue">POST</a></li>
           </ul>
         </div>
         <div className="fixed-action-btn horizontal" style={this.state.videoButtonStyle} >
@@ -175,7 +218,7 @@ class Profile extends React.Component {
             <i className="large material-icons">videocam</i>
           </a>
           <ul>
-            <li onClick={this.handleCancelVideoClick} ><a className="btn-floating red"><i className="material-icons">not_interested</i></a></li>
+            <li><a className="btn-floating red"><i className="material-icons">not_interested</i></a></li>
             <li><a className="btn-floating red">POST</a></li>
             <li><a className="btn-floating red"><i className="material-icons">replay</i></a></li>
             <li><a className="btn-floating red"><i className="material-icons">stop</i></a></li>

@@ -34,8 +34,14 @@ app.use(bodyParser.json());
 // Socket.io
 io.on('connection', (socket) => {
   console.log('A user connected with socket id', socket.id);
+
   socket.on('disconnect', () => {
     console.log('A user disconnected wit hscoket id', socket.id);
+  });
+
+  socket.on('add message', (message) => {
+    console.log('received add message request');
+    socket.broadcast.emit('add message', message);
   });
 });
 
