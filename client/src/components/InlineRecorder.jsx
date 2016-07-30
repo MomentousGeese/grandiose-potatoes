@@ -26,11 +26,13 @@ class InlineRecorder extends React.Component {
       showRecordButton: false,
       recorder: null,
       buffer: [],
+      recVidUrl: null,
     };
 
     this.redrawFilters = this.redrawFilters.bind(this);
     this.changeSelectedEffect = this.changeSelectedEffect.bind(this);
     this.toggleRecording = this.toggleRecording.bind(this);
+    this.discardVideo = this.discardVideo.bind(this);
   }
 
   componentDidMount() {
@@ -141,10 +143,10 @@ class InlineRecorder extends React.Component {
   toggleRecording() {
     if (this.state.recording) {
       this.state.canvases[this.state.selectedEffect].style.cursor = 'pointer';
-      // this.stopRecording();
+      this.stopRecording();
     } else {
       this.state.canvases[this.state.selectedEffect].style.cursor = 'default';
-      // this.startRecording();
+      this.startRecording();
     }
     this.setState({
       recording: !this.state.recording,
@@ -155,13 +157,47 @@ class InlineRecorder extends React.Component {
     const currentCanvas = this.state.canvases[this.state.selectedEffect];
     const stream = currentCanvas.captureStream();
     const recorder = new MediaRecorder(stream);
+    recorder.ondataavailable = (e) => {
+      if (e.data) {
+        this.state.buffer.push(e.data);
+      }
+    };
+    recorder.start();
 
+    this.setState({
+      recorder,
+    });
+  }
+
+  stopRecording() {
+    this.state.recorder.stop();
+    const blob = new Blob(this.state.buffer, { type: 'video/webm' });
+    this.setState({
+      recVidUrl: window.URL.createObjectURL(blob),
+    });
+  }
+
+  discardVideo() {
+    this.setState({
+      recorder: null,
+      buffer: [],
+      recVidUrl: null,
+    });
   }
 
   render() {
     return (
       <li className="recorder blue lighten-2">
-        <button id="record-button" onClick={this.toggleRecording} className={this.state.showRecordButton ? '' : 'hidden'}>
+        {this.state.recVidUrl !== null ?
+          <div id="preview-box">
+            <i className="material-icons right" onClick={this.discardVideo}>close</i>
+            <video id="preview-player" src={this.state.recVidUrl} controls autoPlay></video>
+            <button onClick={this.sendRecording}>
+              <i className="material-icons right">send</i>
+            </button>
+          </div>
+        : null}
+        <button id="record-button" onClick={this.toggleRecording} className={!this.state.showRecordButton || this.state.recVidUrl ? 'hidden' : ''}>
           <div id="record-button-inside" className={this.state.recording ? 'recording' : ''}></div>
         </button>
         <div id="grid-row-0"></div>

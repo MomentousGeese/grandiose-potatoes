@@ -106,3 +106,50 @@
 .recorder canvas:hover {
   box-shadow: 0px 0px 10px 4px rgba(255,255,255,0.72);
 }
+
+#preview-box {
+  position: absolute;
+  z-index: 2;
+  width: 480px;
+  height: 360px;
+}
+
+#preview-box i {
+  position: absolute;
+  margin-left: 15px;
+  z-index: 3;
+  color: white;
+  font-size: 36px;
+  cursor: pointer;
+}
+
+#preview-box video {
+  position: absolute;
+  width: 480px;
+  height: 360px;
+  z-index: 2;
+}
+
+#preview-box button {
+  position: absolute;
+  z-index: 3;
+  width: 50px;
+  height: 50px;
+  bottom: 12px;
+  left: 215px;
+  border: 0px;
+  border-radius: 50%;
+  padding: 0px;
+  background: #f44336;
+  cursor: pointer;
+  transition: all 0.5s both;
+}
+
+#preview-box button i {
+  position: absolute;
+  color: white;
+  z-index: 4;
+  font-size: 28px;
+  margin-left: -14px;
+  margin-top: -14px;
+}
