@@ -61,18 +61,15 @@ class InlineRecorder extends React.Component {
   }
 
   changeSelectedEffect(e) {
-    console.log('click');
     const springs = this.state.springSystem.getAllSprings();
     // If the clicked effect was already selected, deselect it by setting selectedEffect to null
     if (this.state.selectedEffect === e.target.dataset.index) {
-      console.log('deselect', e.target.dataset.index);
       this.state.canvases[e.target.dataset.index].style['z-index'] = 0;
       springs[e.target.dataset.index].setEndValue(0);
       this.setState({
         selectedEffect: null,
       });
     } else {
-      console.log('select', e.target.dataset.index);
       this.state.canvases[e.target.dataset.index].style['z-index'] = 1;
       springs[e.target.dataset.index].setEndValue(1);
       this.setState({
@@ -134,7 +131,7 @@ class InlineRecorder extends React.Component {
 
   render() {
     return (
-      <li className="recorder">
+      <li className="recorder blue lighten-2">
         <div id="grid-row-0"></div>
         <div id="grid-row-1"></div>
         <div id="grid-row-2"></div>
