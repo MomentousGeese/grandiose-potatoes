@@ -1,10 +1,16 @@
+// lib
 import React from 'react';
+import io from 'socket.io-client';
 
+// util
 import { getUsers, getCurrentUser, getMessages, filterMessages, createMessage } from '../util/profileUtil.js';
 
+// components
 import User from './User';
-
 import MessageStream from './MessageStream';
+
+// socket init
+const socket = io();
 
 ////////////// MOCK DATA ////////////////////////
 // const messages = [
@@ -35,7 +41,8 @@ class Profile extends React.Component {
 
     this.state = {
       allUsers: [],
-      currentUser: 'Greg', // this.props.currentUser?
+      currentUser: null, // this.props.currentUser?
+      currentOtherUser: null,
       allMessages: [],
       currentMessages: [],
       showLoading: true,
@@ -48,6 +55,10 @@ class Profile extends React.Component {
     this.handleCancelVideoClick = this.handleCancelVideoClick.bind(this);
     this.handleUserClick = this.handleUserClick.bind(this);
     this.handleVideoClick = this.handleVideoClick.bind(this);
+
+    socket.on('add message', (message) => {
+      console.log('yedo new message');
+    });
   }
 
   componentDidMount() {
@@ -89,6 +100,7 @@ class Profile extends React.Component {
     // console.log(this.state.currentUser);
     this.setState({
       currentMessages: filterMessages(this.state.allMessages, this.state.currentUser, otherUser),
+      currentOtherUser: otherUser,
     });
 
     console.log(this.state.currentMessages);
@@ -106,6 +118,11 @@ class Profile extends React.Component {
       videoButtonStyle: { display: "none" },
       showVideoRecorder: false,
     });
+  }
+
+  handleTestPostClick() {
+    var message = 'ayyy';
+    socket.emit('add message', message)
   }
 
   startRec() {
