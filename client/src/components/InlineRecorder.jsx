@@ -24,6 +24,8 @@ class InlineRecorder extends React.Component {
       selectedEffect: null,
       recording: false,
       showRecordButton: false,
+      recorder: null,
+      buffer: [],
     };
 
     this.redrawFilters = this.redrawFilters.bind(this);
@@ -64,22 +66,24 @@ class InlineRecorder extends React.Component {
   }
 
   changeSelectedEffect(e) {
-    const springs = this.state.springSystem.getAllSprings();
-    if (this.state.selectedEffect === e.target.dataset.index) {
-      // Toggle off selectedEffect (set to null)
-      this.state.canvases[e.target.dataset.index].style['z-index'] = 0;
-      springs[e.target.dataset.index].setEndValue(0);
-      this.setState({
-        selectedEffect: null,
-        showRecordButton: false,
-      });
-    } else {
-      this.state.canvases[e.target.dataset.index].style['z-index'] = 1;
-      springs[e.target.dataset.index].setEndValue(1);
-      this.setState({
-        selectedEffect: e.target.dataset.index,
-        showRecordButton: true,
-      });
+    if (!this.state.recording) {
+      const springs = this.state.springSystem.getAllSprings();
+      if (this.state.selectedEffect === e.target.dataset.index) {
+        // Toggle off selectedEffect (set to null)
+        this.state.canvases[e.target.dataset.index].style['z-index'] = 0;
+        springs[e.target.dataset.index].setEndValue(0);
+        this.setState({
+          selectedEffect: null,
+          showRecordButton: false,
+        });
+      } else {
+        this.state.canvases[e.target.dataset.index].style['z-index'] = 1;
+        springs[e.target.dataset.index].setEndValue(1);
+        this.setState({
+          selectedEffect: e.target.dataset.index,
+          showRecordButton: true,
+        });
+      }
     }
   }
 
@@ -135,9 +139,23 @@ class InlineRecorder extends React.Component {
   }
 
   toggleRecording() {
+    if (this.state.recording) {
+      this.state.canvases[this.state.selectedEffect].style.cursor = 'pointer';
+      // this.stopRecording();
+    } else {
+      this.state.canvases[this.state.selectedEffect].style.cursor = 'default';
+      // this.startRecording();
+    }
     this.setState({
       recording: !this.state.recording,
     });
+  }
+
+  startRecording() {
+    const currentCanvas = this.state.canvases[this.state.selectedEffect];
+    const stream = currentCanvas.captureStream();
+    const recorder = new MediaRecorder(stream);
+
   }
 
   render() {
