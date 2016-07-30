@@ -2,7 +2,8 @@ import React from 'react';
 import rebound from 'rebound';
 import getWebcamVideo from '../util/mediaSource';
 
-import { getPreSignedUrl, getSupportedTypes, putObjectToS3, postVideoUrl } from '../util/recordUtil.js';
+import { getPreSignedUrl, putObjectToS3 } from '../util/recordUtil.js';
+import { createMessage } from '../util/profileUtil.js';
 
 const CANVAS_COUNT = 9;
 const VIDEO_WIDTH_BIG = 480;
@@ -48,7 +49,7 @@ class InlineRecorder extends React.Component {
 
   initFilters() {
     return getWebcamVideo()
-      .then((video) => {
+      .then(([video, stream]) => {
         const canvases = _.range(0, CANVAS_COUNT).map((i) => fx.canvas());
         const textures = canvases.map((canvas) => canvas.texture(video));
 
@@ -64,6 +65,7 @@ class InlineRecorder extends React.Component {
 
         this.setState({
           video,
+          stream,
           canvases,
           textures,
         });
@@ -158,8 +160,15 @@ class InlineRecorder extends React.Component {
 
   startRecording() {
     const currentCanvas = this.state.canvases[this.state.selectedEffect];
-    const stream = currentCanvas.captureStream();
-    const recorder = new MediaRecorder(stream);
+
+    const videoStream = currentCanvas.captureStream().getTracks()[0];
+    const audioStream = this.state.stream.getTracks()[0];
+
+    const combinedStream = new MediaStream();
+    combinedStream.addTrack(videoStream);
+    combinedStream.addTrack(audioStream);
+
+    const recorder = new MediaRecorder(combinedStream);
     recorder.ondataavailable = (e) => {
       if (e.data) {
         this.state.buffer.push(e.data);
@@ -193,17 +202,43 @@ class InlineRecorder extends React.Component {
         data.blob = this.state.blob;
         return putObjectToS3(data);
       })
-      .then((videoData) => postVideoUrl(videoData.publicUrl))
-      .then((code) => {
-        // Set the share link and remove the spinner from the page
-        this.setState({
-          uploading: false,
-        });
-        console.log(`Upload complete: ${window.location.origin}/videos/${code}`);
+      .then((videoData) => {
+        this.props.emitAndAppendNewMessage('vid', videoData.publicUrl);
+        const info = {
+          url: videoData.publicUrl,
+          type: "vid",
+          senderName: this.props.currentUser,
+          receiverName: this.props.currentOtherUser,
+        };
+        return createMessage(info);
+      })
+      .then((res) => {
+        console.log('Message created:', res);
       })
       .catch((err) => {
         throw err;
       });
+
+
+    // /////////////////////////////////
+    //    POST REQUEST DATA FORMAT    //
+    //                                //
+    //     info = {                   //
+    //       url: url,                //
+    //       type: type,              //
+    //       senderName: sender,      //
+    //       receiverName: receiver,  //
+    //     };                         //
+    //                                //
+    // /////////////////////////////////
+
+    // const info = {
+    //   url: "http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4",
+    //   type: "vid",
+    //   senderName: "John Cena",
+    //   receiverName: "ryan",
+    // };
+    // createMessage(info);
   }
 
   discardVideo() {
@@ -239,7 +274,9 @@ class InlineRecorder extends React.Component {
 
 InlineRecorder.propTypes = {
   currentUser: React.PropTypes.string,
+  currentOtherUser: React.PropTypes.string,
   messages: React.PropTypes.array,
+  emitAndAppendNewMessage: React.PropTypes.func,
 };
 
 export default InlineRecorder;

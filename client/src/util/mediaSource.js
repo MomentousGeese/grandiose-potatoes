@@ -5,12 +5,10 @@ const constraints = {
       maxHeight: 360,
     },
   },
-  audio: false,
-
+  audio: true,
 };
 
-// The video track from getUserMedia
-let track;
+let avstream;
 
 // Returns a Promise that is resolved with a newly created video element,
 // with a source from the webcam, in playing state
@@ -18,14 +16,15 @@ function getWebcamVideo() {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
     video.setAttribute('autoplay', true);
+    video.setAttribute('muted', true);
 
     navigator.getUserMedia(constraints, (stream) => {
       video.src = window.URL.createObjectURL(stream);
-      track = stream.getTracks()[0];
+      avstream = stream;
     }, reject);
 
     video.addEventListener('play', () => {
-      resolve(video);
+      resolve([video, avstream]);
     });
   });
 }
