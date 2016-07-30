@@ -1,8 +1,8 @@
 import React from 'react';
-
 import rebound from 'rebound';
-
 import getWebcamVideo from '../util/mediaSource';
+
+import { getPreSignedUrl, getSupportedTypes, putObjectToS3, postVideoUrl } from '../util/recordUtil.js';
 
 const CANVAS_COUNT = 9;
 const VIDEO_WIDTH_BIG = 480;
@@ -22,10 +22,20 @@ class InlineRecorder extends React.Component {
       textures: [],
       springSystem: new rebound.SpringSystem(),
       selectedEffect: null,
+      recording: false,
+      showRecordButton: false,
+      recorder: null,
+      buffer: [],
+      blob: null,
+      recVidUrl: null,
+      uploading: false,
     };
 
     this.redrawFilters = this.redrawFilters.bind(this);
     this.changeSelectedEffect = this.changeSelectedEffect.bind(this);
+    this.toggleRecording = this.toggleRecording.bind(this);
+    this.discardVideo = this.discardVideo.bind(this);
+    this.uploadRecording = this.uploadRecording.bind(this);
   }
 
   componentDidMount() {
@@ -61,20 +71,24 @@ class InlineRecorder extends React.Component {
   }
 
   changeSelectedEffect(e) {
-    const springs = this.state.springSystem.getAllSprings();
-    // If the clicked effect was already selected, deselect it by setting selectedEffect to null
-    if (this.state.selectedEffect === e.target.dataset.index) {
-      this.state.canvases[e.target.dataset.index].style['z-index'] = 0;
-      springs[e.target.dataset.index].setEndValue(0);
-      this.setState({
-        selectedEffect: null,
-      });
-    } else {
-      this.state.canvases[e.target.dataset.index].style['z-index'] = 1;
-      springs[e.target.dataset.index].setEndValue(1);
-      this.setState({
-        selectedEffect: e.target.dataset.index,
-      });
+    if (!this.state.recording) {
+      const springs = this.state.springSystem.getAllSprings();
+      if (this.state.selectedEffect === e.target.dataset.index) {
+        // Toggle off selectedEffect (set to null)
+        this.state.canvases[e.target.dataset.index].style['z-index'] = 0;
+        springs[e.target.dataset.index].setEndValue(0);
+        this.setState({
+          selectedEffect: null,
+          showRecordButton: false,
+        });
+      } else {
+        this.state.canvases[e.target.dataset.index].style['z-index'] = 1;
+        springs[e.target.dataset.index].setEndValue(1);
+        this.setState({
+          selectedEffect: e.target.dataset.index,
+          showRecordButton: true,
+        });
+      }
     }
   }
 
@@ -129,9 +143,92 @@ class InlineRecorder extends React.Component {
     requestAnimationFrame(this.redrawFilters);
   }
 
+  toggleRecording() {
+    if (this.state.recording) {
+      this.state.canvases[this.state.selectedEffect].style.cursor = 'pointer';
+      this.stopRecording();
+    } else {
+      this.state.canvases[this.state.selectedEffect].style.cursor = 'default';
+      this.startRecording();
+    }
+    this.setState({
+      recording: !this.state.recording,
+    });
+  }
+
+  startRecording() {
+    const currentCanvas = this.state.canvases[this.state.selectedEffect];
+    const stream = currentCanvas.captureStream();
+    const recorder = new MediaRecorder(stream);
+    recorder.ondataavailable = (e) => {
+      if (e.data) {
+        this.state.buffer.push(e.data);
+      }
+    };
+    recorder.start();
+
+    this.setState({
+      recorder,
+    });
+  }
+
+  stopRecording() {
+    this.state.recorder.stop();
+    const blob = new Blob(this.state.buffer, { type: 'video/webm' });
+    this.setState({
+      blob,
+      recVidUrl: window.URL.createObjectURL(blob),
+    });
+  }
+
+  uploadRecording() {
+    // Set the uploading to true to show the loader bar
+    this.setState({
+      uploading: true,
+    });
+
+    getPreSignedUrl()
+      .then((data) => {
+        // data: { preSignedUrl, publicUrl }
+        data.blob = this.state.blob;
+        return putObjectToS3(data);
+      })
+      .then((videoData) => postVideoUrl(videoData.publicUrl))
+      .then((code) => {
+        // Set the share link and remove the spinner from the page
+        this.setState({
+          uploading: false,
+        });
+        console.log(`Upload complete: ${window.location.origin}/videos/${code}`);
+      })
+      .catch((err) => {
+        throw err;
+      });
+  }
+
+  discardVideo() {
+    this.setState({
+      recorder: null,
+      buffer: [],
+      recVidUrl: null,
+    });
+  }
+
   render() {
     return (
       <li className="recorder blue lighten-2">
+        {this.state.recVidUrl !== null ?
+          <div id="preview-box">
+            <i className="material-icons right" onClick={this.discardVideo}>close</i>
+            <video id="preview-player" src={this.state.recVidUrl} controls autoPlay></video>
+            <button onClick={this.uploadRecording}>
+              <i className="material-icons right">send</i>
+            </button>
+          </div>
+        : null}
+        <button id="record-button" onClick={this.toggleRecording} className={!this.state.showRecordButton || this.state.recVidUrl ? 'hidden' : ''}>
+          <div id="record-button-inside" className={this.state.recording ? 'recording' : ''}></div>
+        </button>
         <div id="grid-row-0"></div>
         <div id="grid-row-1"></div>
         <div id="grid-row-2"></div>

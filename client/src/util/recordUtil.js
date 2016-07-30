@@ -47,7 +47,7 @@ function putObjectToS3(data) {
   return new Promise((resolve, reject) => {
     $.ajax({
       type: 'PUT',
-      data: data.superBlob,
+      data: data.blob,
       url: data.preSignedUrl,
       processData: false,
       contentType: 'video/webm',
