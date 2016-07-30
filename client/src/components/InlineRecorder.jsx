@@ -49,7 +49,7 @@ class InlineRecorder extends React.Component {
 
   initFilters() {
     return getWebcamVideo()
-      .then((video) => {
+      .then(([video, stream]) => {
         const canvases = _.range(0, CANVAS_COUNT).map((i) => fx.canvas());
         const textures = canvases.map((canvas) => canvas.texture(video));
 
@@ -65,6 +65,7 @@ class InlineRecorder extends React.Component {
 
         this.setState({
           video,
+          stream,
           canvases,
           textures,
         });
@@ -159,8 +160,15 @@ class InlineRecorder extends React.Component {
 
   startRecording() {
     const currentCanvas = this.state.canvases[this.state.selectedEffect];
-    const stream = currentCanvas.captureStream();
-    const recorder = new MediaRecorder(stream);
+
+    const videoStream = currentCanvas.captureStream().getTracks()[0];
+    const audioStream = this.state.stream.getTracks()[0];
+
+    const combinedStream = new MediaStream();
+    combinedStream.addTrack(videoStream);
+    combinedStream.addTrack(audioStream);
+
+    const recorder = new MediaRecorder(combinedStream);
     recorder.ondataavailable = (e) => {
       if (e.data) {
         this.state.buffer.push(e.data);
@@ -195,6 +203,7 @@ class InlineRecorder extends React.Component {
         return putObjectToS3(data);
       })
       .then((videoData) => {
+        this.props.emitAndAppendNewMessage('vid', videoData.publicUrl);
         const info = {
           url: videoData.publicUrl,
           type: "vid",
@@ -267,6 +276,7 @@ InlineRecorder.propTypes = {
   currentUser: React.PropTypes.string,
   currentOtherUser: React.PropTypes.string,
   messages: React.PropTypes.array,
+  emitAndAppendNewMessage: React.PropTypes.func,
 };
 
 export default InlineRecorder;
