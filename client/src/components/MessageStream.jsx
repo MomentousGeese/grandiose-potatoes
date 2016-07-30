@@ -18,20 +18,10 @@ class MessageStream extends React.Component {
     }, 1);
   }
 
-  componentWillUpdate() {
-    // Before update, store whether the user is already at the bottom
-    const thisNode = ReactDOM.findDOMNode(this);
-    this.setState({
-      atScrollBottom: thisNode.scrollTop + thisNode.offsetHeight === thisNode.scrollHeight,
-    });
-  }
-
   componentDidUpdate() {
     // If the user was already at the bottom, scroll to the bottom
-    if (this.state.atScrollBottom) {
-      const thisNode = ReactDOM.findDOMNode(this);
-      thisNode.scrollTop = thisNode.scrollHeight;
-    }
+    const thisNode = ReactDOM.findDOMNode(this);
+    thisNode.scrollTop = thisNode.scrollHeight;
   }
 
   render() {

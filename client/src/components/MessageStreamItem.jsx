@@ -1,7 +1,5 @@
 import React from 'react';
 
-import VideoButton from 'VideoButton';
-
 function MessageStreamItem(props) {
   const className = props.message.username === props.currentUser ? 'user-me' : 'user-other';
   // "http://materializecss.com/images/sample-1.jpg"
