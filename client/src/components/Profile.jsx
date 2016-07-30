@@ -198,6 +198,7 @@ class Profile extends React.Component {
           <MessageStream
             showVideoRecorder={this.state.showVideoRecorder}
             currentUser={this.state.currentUser}
+            currentOtherUser={this.state.currentOtherUser}
             messages={this.state.currentMessages}
           />
         </div>

@@ -33,7 +33,7 @@ class MessageStream extends React.Component {
           ))
         }
         {
-          this.props.showVideoRecorder ? <InlineRecorder /> : null
+          this.props.showVideoRecorder ? <InlineRecorder currentUser={this.props.currentUser} currentOtherUser={this.props.currentOtherUser} /> : null
         }
       </ul>
     );
@@ -43,6 +43,7 @@ class MessageStream extends React.Component {
 MessageStream.propTypes = {
   showVideoRecorder: React.PropTypes.bool,
   currentUser: React.PropTypes.string,
+  currentOtherUser: React.PropTypes.string,
   messages: React.PropTypes.array,
 };
 
